@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Upload, ArrowRight, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,21 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scanMode, setScanMode] = useState<'barcode' | 'ingredient'>('barcode');
+  const [isScanAnimating, setIsScanAnimating] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
+  
+  // Start scan animation when camera is active
+  useEffect(() => {
+    if (isCameraActive) {
+      setIsScanAnimating(true);
+    } else {
+      setIsScanAnimating(false);
+    }
+  }, [isCameraActive]);
   
   const startCamera = async () => {
     try {
@@ -102,6 +112,9 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
     setIsProcessing(true);
     
     try {
+      // Simulate processing time with buffer
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       let productData;
       
       if (scanMode === 'barcode') {
@@ -209,14 +222,40 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
           </div>
         )}
         
+        {/* Scan animation overlay */}
         {isCameraActive && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative w-full h-full">
-              <div className="absolute top-0 left-0 right-0 h-1/4 border-t-2 border-l-2 border-r-2 border-white/30 rounded-t-lg"></div>
-              <div className="absolute bottom-0 left-0 right-0 h-1/4 border-b-2 border-l-2 border-r-2 border-white/30 rounded-b-lg"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2/3 h-[2px] bg-primary/40 animate-scan-line"></div>
-              </div>
+              {/* Scanner frame corners */}
+              <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-primary rounded-tl-lg"></div>
+              <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-primary rounded-tr-lg"></div>
+              <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-primary rounded-bl-lg"></div>
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-primary rounded-br-lg"></div>
+              
+              {/* Horizontal scan line */}
+              {isScanAnimating && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-[2px] bg-primary/60 animate-[scan-line_2s_ease-in-out_infinite]"></div>
+                </div>
+              )}
+              
+              {/* Laser dots */}
+              {isScanAnimating && (
+                <>
+                  <div className="absolute left-0 top-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                  <div className="absolute right-0 top-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Processing overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+              <p className="text-sm font-medium animate-pulse">Processing...</p>
             </div>
           </div>
         )}

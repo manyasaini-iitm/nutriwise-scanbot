@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { 
-  Save, Trash2, Plus, Edit, CircleAlert,
+  Save, Trash2, Plus, Edit, CircleAlert, X,
   Salad, Apple, Scissors, Thermometer
 } from "lucide-react";
 import { 
@@ -83,6 +83,8 @@ const UserProfile = () => {
   const [editMode, setEditMode] = useState(false);
   const [localProfile, setLocalProfile] = useState({ ...userProfile });
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [newAllergen, setNewAllergen] = useState("");
+  const [addAllergenOpen, setAddAllergenOpen] = useState(false);
 
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -117,6 +119,36 @@ const UserProfile = () => {
       setLocalProfile({
         ...localProfile,
         allergens: currentAllergens,
+      });
+    }
+  };
+
+  const addCustomAllergen = () => {
+    if (!newAllergen.trim()) return;
+    
+    // Add custom allergen as an Allergen type (using type assertion)
+    const customAllergen = newAllergen.trim().toLowerCase() as Allergen;
+    
+    if (!localProfile.allergens.includes(customAllergen)) {
+      setLocalProfile({
+        ...localProfile,
+        allergens: [...localProfile.allergens, customAllergen],
+      });
+      
+      // Add to allergen options if it doesn't exist
+      if (!allergenOptions.some(option => option.value === customAllergen)) {
+        allergenOptions.push({
+          value: customAllergen,
+          label: newAllergen.trim()
+        });
+      }
+      
+      setNewAllergen("");
+      setAddAllergenOpen(false);
+      
+      toast({
+        title: "Allergen Added",
+        description: `${newAllergen.trim()} has been added to your allergens.`,
       });
     }
   };
@@ -194,6 +226,14 @@ const UserProfile = () => {
     toast({
       title: "Profile Reset",
       description: "Your health profile has been reset to default values.",
+    });
+  };
+
+  const removeAllergen = (allergen: Allergen) => {
+    const updatedAllergens = localProfile.allergens.filter(a => a !== allergen);
+    setLocalProfile({
+      ...localProfile,
+      allergens: updatedAllergens,
     });
   };
 
@@ -288,9 +328,59 @@ const UserProfile = () => {
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-4">
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Select any allergens that you need to avoid
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Select any allergens that you need to avoid
+                    </p>
+                    {editMode && (
+                      <Dialog open={addAllergenOpen} onOpenChange={setAddAllergenOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 gap-1">
+                            <Plus className="h-3.5 w-3.5" />
+                            <span className="text-xs">Add Allergen</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Add Custom Allergen</DialogTitle>
+                            <DialogDescription>
+                              Enter the name of the allergen you want to add to your profile.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex items-center space-x-2 py-4">
+                            <div className="grid flex-1 gap-2">
+                              <Label htmlFor="allergen-name" className="sr-only">
+                                Allergen Name
+                              </Label>
+                              <Input
+                                id="allergen-name"
+                                placeholder="Enter allergen name"
+                                value={newAllergen}
+                                onChange={(e) => setNewAllergen(e.target.value)}
+                                className="w-full"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => setAddAllergenOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={addCustomAllergen}
+                              disabled={!newAllergen.trim()}
+                            >
+                              Add
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {allergenOptions.map((option) => (
                       <Button
@@ -307,8 +397,39 @@ const UserProfile = () => {
                         }`}
                       >
                         {option.label}
+                        {editMode && localProfile.allergens.includes(option.value) && (
+                          <X
+                            className="h-3.5 w-3.5 ml-1 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeAllergen(option.value);
+                            }}
+                          />
+                        )}
                       </Button>
                     ))}
+                    
+                    {/* Show custom allergens that aren't in the predefined options */}
+                    {localProfile.allergens
+                      .filter(allergen => !allergenOptions.some(opt => opt.value === allergen))
+                      .map(allergen => (
+                        <Button
+                          key={allergen}
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="rounded-full bg-primary text-primary-foreground"
+                        >
+                          {allergen}
+                          {editMode && (
+                            <X
+                              className="h-3.5 w-3.5 ml-1 cursor-pointer"
+                              onClick={() => removeAllergen(allergen)}
+                            />
+                          )}
+                        </Button>
+                      ))
+                    }
                   </div>
                 </div>
               </AccordionContent>
