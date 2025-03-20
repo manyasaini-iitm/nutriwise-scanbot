@@ -7,12 +7,11 @@ const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    console.log("Index page loaded"); // Debug log
-    // Uncomment this if you want to redirect instead of rendering ScannerPage directly
-    // navigate('/scanner');
+    console.log("Index page loaded - Showing ScannerPage directly"); // Debug log
+    // This component directly renders ScannerPage
   }, []);
 
-  // Return the ScannerPage component directly for now
+  // Return the ScannerPage component directly
   return <ScannerPage />;
 };
 
