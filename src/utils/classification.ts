@@ -76,17 +76,20 @@ const healthConditionMap = new Map<HealthCondition, string[]>([
   ['IBS', ['dairy', 'gluten', 'fructose', 'caffeine', 'alcohol', 'artificial sweeteners']]
 ]);
 
+// Updated type definition to make max optional for all properties
+type NutritionTarget = {
+  protein?: { min: number, max?: number },
+  carbs?: { min: number, max?: number },
+  fat?: { min: number, max?: number },
+  sugar?: { max: number },
+  calories?: { min?: number, max?: number }
+};
+
 // Map of fitness goals and nutritional considerations
 const fitnessGoalMap = new Map<FitnessGoal, {
   good: string[],
   avoid: string[],
-  nutritionTarget: {
-    protein?: { min: number, max: number }, // g
-    carbs?: { min: number, max: number },  // g
-    fat?: { min: number, max: number },    // g
-    sugar?: { max: number },               // g
-    calories?: { min?: number, max?: number } // kcal
-  }
+  nutritionTarget: NutritionTarget
 }>([
   ['weight loss', {
     good: ['protein', 'fiber', 'water'],
