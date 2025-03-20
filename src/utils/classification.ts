@@ -85,7 +85,7 @@ const fitnessGoalMap = new Map<FitnessGoal, {
     carbs?: { min: number, max: number },  // g
     fat?: { min: number, max: number },    // g
     sugar?: { max: number },               // g
-    calories?: { min: number, max: number } // kcal
+    calories?: { min?: number, max?: number } // kcal
   }
 }>([
   ['weight loss', {

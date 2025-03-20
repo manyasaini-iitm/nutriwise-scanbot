@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Motion, ScanSearch, User, Dumbbell, Menu, X } from "lucide-react";
+import { ActivitySquare, ScanSearch, User, Dumbbell, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -17,7 +17,7 @@ const Navbar = () => {
 
   const links = [
     { name: "Scanner", href: "/", icon: ScanSearch },
-    { name: "Results", href: "/results", icon: Motion },
+    { name: "Results", href: "/results", icon: ActivitySquare },
     { name: "Profile", href: "/profile", icon: User },
     { name: "Fitness Goals", href: "/goals", icon: Dumbbell },
   ];
