@@ -17,27 +17,14 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scanMode, setScanMode] = useState<'barcode' | 'ingredient'>('barcode');
   const [isScanAnimating, setIsScanAnimating] = useState(false);
-  const [cameraError, setCameraError] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
   
-  // Start camera automatically when component mounts
+  // Start scan animation when camera is active
   useEffect(() => {
-    console.log('Scanner component mounted, attempting to start camera');
-    startCamera();
-    
-    // Cleanup function to stop camera on unmount
-    return () => {
-      stopCamera();
-    };
-  }, []);
-  
-  // Set scan animation whenever camera state changes
-  useEffect(() => {
-    console.log('Camera active state changed:', isCameraActive);
     if (isCameraActive) {
       setIsScanAnimating(true);
     } else {
@@ -47,27 +34,16 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   
   const startCamera = async () => {
     try {
-      console.log('Starting camera...');
-      const constraints = { 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      };
-      
-      console.log('Getting user media with constraints:', constraints);
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
       
       if (videoRef.current) {
-        console.log('Setting video stream');
         videoRef.current.srcObject = stream;
         setIsCameraActive(true);
-        setCameraError('');
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
-      setCameraError('Failed to access camera. Please check permissions.');
       toast({
         title: "Camera Access Error",
         description: "Please make sure your camera is enabled and you've granted permission.",
@@ -77,7 +53,6 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   };
   
   const stopCamera = () => {
-    console.log('Stopping camera');
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
       tracks.forEach(track => track.stop());
@@ -87,22 +62,15 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   };
   
   const captureImage = () => {
-    if (!videoRef.current || !canvasRef.current) {
-      console.error('Video or canvas ref is null');
-      return;
-    }
+    if (!videoRef.current || !canvasRef.current) return;
     
-    console.log('Capturing image');
     setIsCapturing(true);
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     
-    if (!context) {
-      console.error('Canvas context is null');
-      return;
-    }
+    if (!context) return;
     
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth;
@@ -118,38 +86,29 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
     // Stop the camera
     stopCamera();
     setIsCapturing(false);
-    console.log('Image captured successfully');
   };
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
-    console.log('File selected:', file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
         setCapturedImage(e.target.result as string);
-        console.log('File loaded as data URL');
       }
     };
     reader.readAsDataURL(file);
   };
   
   const resetCapture = () => {
-    console.log('Resetting capture');
     setCapturedImage(null);
     setIsProcessing(false);
-    startCamera();
   };
   
   const processCapturedImage = async () => {
-    if (!capturedImage) {
-      console.error('No captured image to process');
-      return;
-    }
+    if (!capturedImage) return;
     
-    console.log('Processing captured image...');
     setIsProcessing(true);
     
     try {
@@ -160,12 +119,10 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
       
       if (scanMode === 'barcode') {
         // Process barcode
-        console.log('Processing as barcode');
         const barcode = await scanBarcode(capturedImage);
         productData = await getProductInfo(barcode);
       } else {
         // Process ingredients
-        console.log('Processing as ingredient list');
         const ingredients = await extractIngredients(capturedImage);
         productData = {
           name: 'Unknown Product',
@@ -181,8 +138,6 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
           }
         };
       }
-      
-      console.log('Processing complete, product data:', productData);
       
       // Store product data in session storage
       sessionStorage.setItem('scannedProduct', JSON.stringify(productData));
@@ -212,7 +167,7 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
   };
   
   return (
-    <div className="w-full max-w-md mx-auto glass-card p-6 rounded-lg shadow-md bg-background/80 backdrop-blur-sm">
+    <div className="w-full max-w-md mx-auto glass-card p-6 animate-fade-in">
       <div className="mb-6 flex justify-center">
         <div className="inline-flex rounded-lg border border-border p-1">
           <button
@@ -238,17 +193,14 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
         </div>
       </div>
       
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted mb-4">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border bg-muted mb-4">
         {isCameraActive ? (
           <video 
             ref={videoRef}
             autoPlay 
             playsInline 
             className="w-full h-full object-cover"
-            onLoadedMetadata={() => {
-              console.log('Video metadata loaded');
-              if (videoRef.current) videoRef.current.play();
-            }}
+            onLoadedMetadata={() => videoRef.current?.play()}
           />
         ) : capturedImage ? (
           <img 
@@ -258,30 +210,20 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            {cameraError ? (
-              <>
-                <CircleAlert className="w-12 h-12 mb-4 text-destructive opacity-70" />
-                <h3 className="text-lg font-medium mb-2">Camera Error</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">{cameraError}</p>
-              </>
-            ) : (
-              <>
-                <Scan className="w-12 h-12 mb-4 text-muted-foreground opacity-70" />
-                <h3 className="text-lg font-medium mb-2">
-                  {scanMode === 'barcode' ? 'Scan Product Barcode' : 'Scan Ingredient List'}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  {scanMode === 'barcode' 
-                    ? 'Position the barcode in the center of the viewfinder to scan' 
-                    : 'Capture a clear image of the ingredient list for analysis'}
-                </p>
-              </>
-            )}
+            <Scan className="w-12 h-12 mb-4 text-muted-foreground opacity-70" />
+            <h3 className="text-lg font-medium mb-2">
+              {scanMode === 'barcode' ? 'Scan Product Barcode' : 'Scan Ingredient List'}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              {scanMode === 'barcode' 
+                ? 'Position the barcode in the center of the viewfinder to scan' 
+                : 'Capture a clear image of the ingredient list for analysis'}
+            </p>
           </div>
         )}
         
         {/* Scan animation overlay */}
-        {isCameraActive && isScanAnimating && (
+        {isCameraActive && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative w-full h-full">
               {/* Scanner frame corners */}
@@ -291,11 +233,19 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
               <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-primary rounded-br-lg"></div>
               
               {/* Horizontal scan line */}
-              <div className="absolute left-0 right-0 top-0 h-[3px] bg-primary/70 scan-line-animation"></div>
+              {isScanAnimating && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-[2px] bg-primary/60 animate-[scan-line_2s_ease-in-out_infinite]"></div>
+                </div>
+              )}
               
               {/* Laser dots */}
-              <div className="absolute left-0 top-1/2 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <div className="absolute right-0 top-1/2 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              {isScanAnimating && (
+                <>
+                  <div className="absolute left-0 top-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                  <div className="absolute right-0 top-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -305,7 +255,7 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
           <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-sm font-medium animate-pulse">Processing your scan...</p>
+              <p className="text-sm font-medium animate-pulse">Processing...</p>
             </div>
           </div>
         )}
@@ -320,17 +270,17 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
             <Button
               onClick={processCapturedImage}
               disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 py-6 text-lg"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
                   Processing...
                 </span>
               ) : (
                 <>
-                  <span>Analyze Scan</span>
-                  <ArrowRight className="h-5 w-5" />
+                  <span>Next</span>
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
@@ -349,17 +299,17 @@ const Scanner = ({ onScanComplete }: ScannerProps) => {
               <Button
                 onClick={captureImage}
                 disabled={isCapturing}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 py-6 text-lg"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90"
               >
-                <Camera className="h-5 w-5" />
+                <Camera className="h-4 w-4" />
                 <span>Capture</span>
               </Button>
             ) : (
               <Button
                 onClick={startCamera}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 py-6 text-lg"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90"
               >
-                <Camera className="h-5 w-5" />
+                <Camera className="h-4 w-4" />
                 <span>Open Camera</span>
               </Button>
             )}
