@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Save, Trash2, Plus, Edit, CircleAlert, X,
@@ -89,7 +88,6 @@ const UserProfile = () => {
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Convert string values to numbers for numeric fields
     if (name === "age" || name === "height" || name === "weight") {
       setLocalProfile({
         ...localProfile,
@@ -108,13 +106,11 @@ const UserProfile = () => {
     const index = currentAllergens.indexOf(allergen);
     
     if (index === -1) {
-      // Add allergen
       setLocalProfile({
         ...localProfile,
         allergens: [...currentAllergens, allergen],
       });
     } else {
-      // Remove allergen
       currentAllergens.splice(index, 1);
       setLocalProfile({
         ...localProfile,
@@ -126,7 +122,6 @@ const UserProfile = () => {
   const addCustomAllergen = () => {
     if (!newAllergen.trim()) return;
     
-    // Add custom allergen as an Allergen type (using type assertion)
     const customAllergen = newAllergen.trim().toLowerCase() as Allergen;
     
     if (!localProfile.allergens.includes(customAllergen)) {
@@ -135,7 +130,6 @@ const UserProfile = () => {
         allergens: [...localProfile.allergens, customAllergen],
       });
       
-      // Add to allergen options if it doesn't exist
       if (!allergenOptions.some(option => option.value === customAllergen)) {
         allergenOptions.push({
           value: customAllergen,
@@ -158,13 +152,11 @@ const UserProfile = () => {
     const index = currentRestrictions.indexOf(restriction);
     
     if (index === -1) {
-      // Add restriction
       setLocalProfile({
         ...localProfile,
         dietaryRestrictions: [...currentRestrictions, restriction],
       });
     } else {
-      // Remove restriction
       currentRestrictions.splice(index, 1);
       setLocalProfile({
         ...localProfile,
@@ -184,13 +176,11 @@ const UserProfile = () => {
       const index = currentConditions.indexOf(condition);
       
       if (index === -1) {
-        // Add condition
         setLocalProfile({
           ...localProfile,
           healthConditions: [...currentConditions, condition],
         });
       } else {
-        // Remove condition
         currentConditions.splice(index, 1);
         setLocalProfile({
           ...localProfile,
@@ -409,7 +399,6 @@ const UserProfile = () => {
                       </Button>
                     ))}
                     
-                    {/* Show custom allergens that aren't in the predefined options */}
                     {localProfile.allergens
                       .filter(allergen => !allergenOptions.some(opt => opt.value === allergen))
                       .map(allergen => (
@@ -581,3 +570,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+
